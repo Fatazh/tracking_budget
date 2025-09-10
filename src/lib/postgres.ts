@@ -1,15 +1,14 @@
 import { Pool, PoolClient } from 'pg';
 
-// PostgreSQL connection configuration
+// NeonDB PostgreSQL connection configuration
 const pool = new Pool({
-  user: process.env.POSTGRES_USER || 'apps_user',
-  host: process.env.POSTGRES_HOST || 'localhost',
-  database: process.env.POSTGRES_DB || 'TrackBudgetDb',
-  password: process.env.POSTGRES_PASSWORD || 'User1234',
-  port: parseInt(process.env.POSTGRES_PORT || '5432'),
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // Required for NeonDB
+  },
   max: 10, // reduce maximum number of clients in the pool
-  idleTimeoutMillis: 10000, // reduce idle timeout
-  connectionTimeoutMillis: 5000, // increase connection timeout
+  idleTimeoutMillis: 30000, // increase for cloud database
+  connectionTimeoutMillis: 10000, // increase for cloud database
 });
 
 // Database connection helper
