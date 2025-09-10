@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Font Awesome 6 */
+@import '@fortawesome/fontawesome-free/css/all.css';
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Dark text utilities for better readability */
+  .text-dark {
+    color: #1f2937 !important; /* gray-800 */
+  }
+  
+  .text-darker {
+    color: #111827 !important; /* gray-900 */
+  }
+  
+  .text-darkest {
+    color: #000000 !important; /* pure black */
+  }
+  
+  /* Override any gray text with darker alternatives */
+  .text-gray-600 {
+    color: #374151 !important; /* darker gray-700 */
+  }
+  
+  .text-gray-500 {
+    color: #4b5563 !important; /* darker gray-600 */
+  }
+  
+  .text-gray-400 {
+    color: #6b7280 !important; /* darker gray-500 */
+  }
+  
+  /* Dark select and option styling */
+  select {
+    color: #111827 !important; /* gray-900 */
+  }
+  
+  select option {
+    color: #111827 !important; /* gray-900 */
+    background-color: #ffffff !important;
+  }
+  
+  select option:checked {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+  }
+  
+  /* Force fixed positioning for floating elements */
+  .floating-button {
+    position: fixed !important;
+    z-index: 9999 !important;
+    will-change: transform !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+  }
+  
+  /* Enhanced sticky positioning for maximum visibility */
+  .sticky-fab {
+    position: fixed !important;
+    z-index: 9999 !important;
+    will-change: transform, opacity !important;
+    backface-visibility: hidden !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    -webkit-font-smoothing: antialiased !important;
+    perspective: 1000px !important;
+  }
+  
+  /* Ensure it stays above everything */
+  .sticky-fab::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
