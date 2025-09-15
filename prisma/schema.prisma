@@ -1,0 +1,49 @@
+// Prisma schema for NeonDB (PostgreSQL)
+// Edit this schema to match your app's data model
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  type        String
+  description String?
+  category    String
+  date        DateTime
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Category {
+  id     Int    @id @default(autoincrement())
+  name   String
+  type   String
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model MonthlyBalance {
+  id             Int      @id @default(autoincrement())
+  month          String
+  initialBalance Float
+  currentBalance Float
+  totalIncome    Float
+  totalExpense   Float
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+}

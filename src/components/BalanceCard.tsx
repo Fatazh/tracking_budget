@@ -161,7 +161,7 @@ export default function BalanceCard({ currentMonth, onBalanceUpdate }: BalanceCa
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-heading text-navy-dark">
           Saldo Bulan {getCurrentMonthName()}
         </h2>
         {isReadOnly && (
@@ -170,7 +170,6 @@ export default function BalanceCard({ currentMonth, onBalanceUpdate }: BalanceCa
           </div>
         )}
       </div>
-      
       <div className="space-y-4">
         <div className="text-center">
           <p className="text-sm text-gray-700">Saldo Saat Ini</p>
@@ -178,28 +177,12 @@ export default function BalanceCard({ currentMonth, onBalanceUpdate }: BalanceCa
             {formatCurrency(balance.currentBalance)}
           </p>
         </div>
-        
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-xs text-gray-500">Saldo Awal</p>
-            <p className="text-sm font-semibold text-gray-800">
-              {formatCurrency(balance.initialBalance)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Total Masuk</p>
-            <p className="text-sm font-semibold text-green-600">
-              {formatCurrency(balance.totalIncome)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Total Keluar</p>
-            <p className="text-sm font-semibold text-red-600">
-              {formatCurrency(balance.totalExpense)}
-            </p>
-          </div>
+        <div className="bg-muted rounded-lg p-4 text-center shadow">
+          <p className="text-xs text-gray-500">Saldo Awal</p>
+          <p className="text-lg font-semibold text-navy-dark">
+            {formatCurrency(balance.initialBalance)}
+          </p>
         </div>
-        
         {balance.currentBalance < 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <p className="text-red-800 text-sm font-medium">
@@ -207,7 +190,6 @@ export default function BalanceCard({ currentMonth, onBalanceUpdate }: BalanceCa
             </p>
           </div>
         )}
-        
         {isReadOnly && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-blue-800 text-sm font-medium">
