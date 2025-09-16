@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { deleteTransaction, updateTransaction } from '@/lib/database';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/authOptions';
 
 export async function DELETE(
   request: NextRequest,
