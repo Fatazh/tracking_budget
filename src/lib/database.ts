@@ -1,3 +1,39 @@
+// Transaction services
+export async function addTransaction(transaction: any, userId: number): Promise<number> {
+  const client = await getDbClient();
+  try {
+    const result = await client.query(
+      `INSERT INTO transactions (user_id, category_id, amount, type, description, date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [
+        userId,
+        transaction.categoryId,
+        transaction.amount,
+        transaction.type,
+        transaction.description,
+        transaction.date
+      ]
+    );
+    return result.rows[0].id;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getTransactions(userId: number, month?: string): Promise<any[]> {
+  const client = await getDbClient();
+  try {
+    let query = `SELECT * FROM transactions WHERE user_id = $1`;
+    let params: any[] = [userId];
+    if (month) {
+      query += ` AND TO_CHAR(date, 'YYYY-MM') = $2`;
+      params.push(month);
+    }
+    const result = await client.query(query, params);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
 
 import { getDbClient } from '@/lib/postgres';
 import { MonthlyBalance } from '@/types';
