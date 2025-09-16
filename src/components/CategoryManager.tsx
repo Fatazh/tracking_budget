@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { TransactionCategory } from '@/types';
 
 const FONTAWESOME_OPTIONS = [
@@ -41,13 +42,16 @@ export default function CategoryManager({ onClose }: CategoryManagerProps) {
     icon: 'fas fa-question-circle'
   });
 
+  const { data: session } = useSession();
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [session]);
 
   const fetchCategories = async () => {
+    const user = session?.user as { id: number } | undefined;
+    if (!user?.id) return;
     try {
-      const response = await fetch('/api/categories');
+      const response = await fetch(`/api/categories?userId=${user.id}`);
       if (response.ok) {
         const data = await response.json();
         setCategories(data);

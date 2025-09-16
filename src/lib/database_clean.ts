@@ -1,4 +1,3 @@
-
 import { getDbClient } from '@/lib/postgres';
 import { MonthlyBalance } from '@/types';
 

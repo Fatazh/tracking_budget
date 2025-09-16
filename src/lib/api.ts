@@ -20,18 +20,16 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id' | 'crea
   return result.id;
 };
 
-export const getTransactions = async (month?: string): Promise<Transaction[]> => {
+export const getTransactions = async (userId: number, month?: string): Promise<Transaction[]> => {
   const url = new URL('/api/transactions', window.location.origin);
   if (month) {
     url.searchParams.set('month', month);
   }
-
+  url.searchParams.set('userId', String(userId));
   const response = await fetch(url.toString());
-
   if (!response.ok) {
     throw new Error('Failed to fetch transactions');
   }
-
   const transactions = await response.json();
   return transactions.map((t: any) => ({
     ...t,
@@ -65,16 +63,13 @@ export const deleteTransaction = async (id: string): Promise<void> => {
 };
 
 // Monthly balance services
-export const getMonthlyBalance = async (month: string): Promise<MonthlyBalance | null> => {
-  const response = await fetch(`/api/balance/${month}`);
-
+export const getMonthlyBalance = async (userId: number, month: string): Promise<MonthlyBalance | null> => {
+  const response = await fetch(`/api/balance/${month}?userId=${userId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch monthly balance');
   }
-
   const balance = await response.json();
   if (!balance) return null;
-
   return {
     ...balance,
     lastUpdated: new Date(balance.lastUpdated)
@@ -166,42 +161,36 @@ export const deleteCategory = async (id: string): Promise<void> => {
 };
 
 // Polling-based subscription simulation for client-side
-export const subscribeToTransactions = (month: string, callback: (transactions: Transaction[]) => void) => {
+export const subscribeToTransactions = (userId: number, month: string, callback: (transactions: Transaction[]) => void) => {
   const pollTransactions = async () => {
     try {
-      const transactions = await getTransactions(month);
+      const transactions = await getTransactions(userId, month);
       callback(transactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     }
   };
-
   // Initial fetch
   pollTransactions();
-
   // Set up polling every 5 seconds
   const intervalId = setInterval(pollTransactions, 5000);
-
   // Return cleanup function
   return () => clearInterval(intervalId);
 };
 
-export const subscribeToMonthlyBalance = (month: string, callback: (balance: MonthlyBalance | null) => void) => {
+export const subscribeToMonthlyBalance = (userId: number, month: string, callback: (balance: MonthlyBalance | null) => void) => {
   const pollBalance = async () => {
     try {
-      const balance = await getMonthlyBalance(month);
+      const balance = await getMonthlyBalance(userId, month);
       callback(balance);
     } catch (error) {
       console.error('Error fetching monthly balance:', error);
     }
   };
-
   // Initial fetch
   pollBalance();
-
   // Set up polling every 5 seconds
   const intervalId = setInterval(pollBalance, 5000);
-
   // Return cleanup function
   return () => clearInterval(intervalId);
 };

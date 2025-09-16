@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import BalanceCard from '@/components/BalanceCard';
 import TransactionForm from '@/components/TransactionForm';
 import TransactionList from '@/components/TransactionList';
@@ -9,6 +11,14 @@ import { MonthlyBalance } from '@/types';
 import { recalculateMonthlyBalance, getCurrentMonth } from '@/lib/utils';
 
 export default function Dashboard() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session?.user) {
+      router.push('/login');
+    }
+  }, [session, status, router]);
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth());
   const [balance, setBalance] = useState<MonthlyBalance | null>(null);
   const [isRecalculating, setIsRecalculating] = useState(false);

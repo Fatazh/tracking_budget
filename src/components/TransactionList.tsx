@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import { Transaction, TransactionCategory } from '@/types';
 import { subscribeToTransactions, deleteTransaction, getCategories } from '@/lib/api';
+import { useSession } from 'next-auth/react';
+interface SessionUser {
+  id: number;
+  email?: string;
+  name?: string;
+}
 import { format } from 'date-fns';
 
 interface TransactionListProps {
@@ -36,15 +42,17 @@ export default function TransactionList({ currentMonth, onTransactionChange }: T
     return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   };
 
+  const { data: session, status } = useSession();
   useEffect(() => {
-    const unsubscribe = subscribeToTransactions(currentMonth, (newTransactions) => {
+    const user = session?.user as SessionUser | undefined;
+    if (!user?.id) return;
+    const unsubscribe = subscribeToTransactions(user.id, currentMonth, (newTransactions: Transaction[]) => {
       setTransactions(newTransactions);
       setLoading(false);
       if (onTransactionChange) onTransactionChange();
     });
-
     return () => unsubscribe();
-  }, [currentMonth, onTransactionChange]);
+  }, [currentMonth, onTransactionChange, session]);
 
   useEffect(() => {
     const fetchCategories = async () => {

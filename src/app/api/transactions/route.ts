@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addTransaction, getTransactions } from '@/lib/database';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month') || undefined;
-    
-    const transactions = await getTransactions(month);
+    const userId = Number(session.user.id);
+    const transactions = await getTransactions(userId, month);
     return NextResponse.json(transactions);
   } catch (error: any) {
-    console.error('Error fetching transactions:', error);
-    
-    // Provide specific error messages
+    // ...existing code...
     let message = 'Failed to fetch transactions';
     let statusCode = 500;
-    
     if (error.code === '28P01') {
       message = 'Database authentication failed. Please check your database credentials.';
       statusCode = 503;
@@ -25,7 +28,6 @@ export async function GET(request: NextRequest) {
       message = 'Cannot connect to PostgreSQL. Please ensure PostgreSQL is running.';
       statusCode = 503;
     }
-    
     return NextResponse.json(
       { error: message, code: error.code },
       { status: statusCode }
@@ -35,19 +37,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const transaction = await request.json();
-    
-    // Convert date string back to Date object
     transaction.date = new Date(transaction.date);
-    
-    const id = await addTransaction(transaction);
+    const userId = session.user.id;
+    const id = await addTransaction(transaction, Number(userId));
     return NextResponse.json({ id }, { status: 201 });
   } catch (error: any) {
-    console.error('Error adding transaction:', error);
-    
+    // ...existing code...
     let message = 'Failed to add transaction';
     let statusCode = 500;
-    
     if (error.code === '28P01') {
       message = 'Database authentication failed. Please check your database credentials.';
       statusCode = 503;
@@ -58,7 +60,6 @@ export async function POST(request: NextRequest) {
       message = 'Cannot connect to PostgreSQL. Please ensure PostgreSQL is running.';
       statusCode = 503;
     }
-    
     return NextResponse.json(
       { error: message, code: error.code },
       { status: statusCode }

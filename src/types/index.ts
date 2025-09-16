@@ -6,6 +6,7 @@ export interface Transaction {
   category: string;
   date: Date;
   createdAt: Date;
+  userId: number;
 }
 
 export interface MonthlyBalance {

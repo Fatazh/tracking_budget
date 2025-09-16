@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { MonthlyBalance } from '@/types';
 import { getMonthlyBalance, setMonthlyBalance, subscribeToMonthlyBalance } from '@/lib/api';
+import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 
 interface BalanceCardProps {
@@ -29,17 +30,19 @@ export default function BalanceCard({ currentMonth, onBalanceUpdate }: BalanceCa
   // Check if the current month is in the past
   const isReadOnly = isMonthInPast(currentMonth);
 
+  const { data: session } = useSession();
   useEffect(() => {
-    const unsubscribe = subscribeToMonthlyBalance(currentMonth, (newBalance) => {
+    const user = session?.user as { id: number } | undefined;
+    if (!user?.id) return;
+    const unsubscribe = subscribeToMonthlyBalance(user.id, currentMonth, (newBalance: MonthlyBalance | null) => {
       setBalance(newBalance);
       setLoading(false);
       if (newBalance && onBalanceUpdate) {
         onBalanceUpdate(newBalance);
       }
     });
-
     return () => unsubscribe();
-  }, [currentMonth, onBalanceUpdate]);
+  }, [currentMonth, onBalanceUpdate, session]);
 
   const handleSetInitialBalance = async () => {
     const amount = parseFloat(initialBalance);
