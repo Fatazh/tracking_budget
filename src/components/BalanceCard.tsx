@@ -101,7 +101,7 @@ export default function BalanceCard({ currentMonth, onBalanceUpdate }: BalanceCa
           <div className="text-center py-8">
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
               <p className="text-gray-700 text-sm mb-2">
-                📅 Bulan ini sudah berlalu
+                Perhatian: Bulan ini sudah berlalu
               </p>
               <p className="text-gray-600 text-xs">
                 Tidak dapat mengedit saldo awal untuk bulan yang sudah lewat
@@ -169,7 +169,7 @@ export default function BalanceCard({ currentMonth, onBalanceUpdate }: BalanceCa
         </h2>
         {isReadOnly && (
           <div className="flex items-center text-gray-700 text-xs bg-gray-100 px-2 py-1 rounded-full">
-            📅 Bulan Lalu
+            Riwayat Bulan Lalu
           </div>
         )}
       </div>
@@ -189,14 +189,14 @@ export default function BalanceCard({ currentMonth, onBalanceUpdate }: BalanceCa
         {balance.currentBalance < 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <p className="text-red-800 text-sm font-medium">
-              ⚠️ Saldo minus! Perhatikan pengeluaran Anda.
+              Perhatian: Saldo minus! Perhatikan pengeluaran Anda.
             </p>
           </div>
         )}
         {isReadOnly && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-blue-800 text-sm font-medium">
-              📊 Ini adalah riwayat bulan {getCurrentMonthName()}
+              Catatan: Ini adalah riwayat bulan {getCurrentMonthName()}
             </p>
             <p className="text-blue-600 text-xs mt-1">
               Data ini hanya untuk melihat riwayat, tidak dapat diedit

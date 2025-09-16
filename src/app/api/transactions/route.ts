@@ -42,6 +42,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const transaction = await request.json();
+    if (
+      typeof transaction.amount !== 'number' ||
+      !transaction.category ||
+      !transaction.description ||
+      !transaction.type ||
+      !transaction.date
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid transaction payload' },
+        { status: 400 }
+      );
+    }
     transaction.date = new Date(transaction.date);
     const userId = session.user.id;
     const id = await addTransaction(transaction, Number(userId));

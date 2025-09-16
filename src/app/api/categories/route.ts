@@ -11,17 +11,18 @@ export async function GET() {
   const userId = session.user.id;
   const client = await getDbClient();
   try {
-    const result = await client.query(`
-      SELECT id, name, type, icon 
-      FROM categories 
-      WHERE user_id = $1
-      ORDER BY type, name
-    `, [userId]);
-    const categories = result.rows.map(row => ({
+    const result = await client.query(
+      `SELECT id, name, type, icon
+       FROM categories
+       WHERE user_id = $1
+       ORDER BY type, name`,
+      [userId]
+    );
+    const categories = result.rows.map((row) => ({
       id: row.id,
       name: row.name,
       type: row.type as 'income' | 'expense',
-      icon: row.icon
+      icon: row.icon,
     }));
     return NextResponse.json(categories);
   } catch (error) {
@@ -50,23 +51,28 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // Generate ID from name
-    const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-    const result = await client.query(`
-      INSERT INTO categories (id, name, type, icon, user_id) 
-      VALUES ($1, $2, $3, $4, $5) 
-      RETURNING *
-    `, [id, name, type, icon || '📝', userId]);
+    const slug = name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]/g, '');
+    const id = slug || `category-${Date.now()}`;
+    const result = await client.query(
+      `INSERT INTO categories (id, name, type, icon, user_id)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, type, icon`,
+      [id, name, type, icon || 'fas fa-question-circle', userId]
+    );
     const newCategory = {
       id: result.rows[0].id,
       name: result.rows[0].name,
       type: result.rows[0].type as 'income' | 'expense',
-      icon: result.rows[0].icon
+      icon: result.rows[0].icon,
     };
     return NextResponse.json(newCategory, { status: 201 });
   } catch (error: any) {
     console.error('Error creating category:', error);
-    if (error.code === '23505') { // Unique constraint violation
+    if (error.code === '23505') {
       return NextResponse.json(
         { error: 'Category with this name already exists' },
         { status: 409 }

@@ -1,5 +1,6 @@
-import './globals.css'
+﻿import './globals.css'
 import type { Metadata } from 'next'
+import SessionWrapper from '@/components/SessionWrapper';
 
 export const metadata: Metadata = {
   title: 'Budget Tracker - Kelola Keuangan Anak Kos',
@@ -13,7 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
-      <body>{children}</body>
+      <body>
+        <SessionWrapper>
+          {children}
+        </SessionWrapper>
+      </body>
     </html>
   )
 }

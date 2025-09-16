@@ -129,7 +129,7 @@ export default function TransactionList({ currentMonth, onTransactionChange }: T
           <h3 className="text-lg font-semibold text-gray-900">Riwayat Transaksi</h3>
           {isReadOnly && (
             <p className="text-sm text-gray-600">
-              📅 {getCurrentMonthName()} (Hanya Lihat)
+              Riwayat {getCurrentMonthName()} (Hanya Lihat)
             </p>
           )}
         </div>
@@ -163,7 +163,7 @@ export default function TransactionList({ currentMonth, onTransactionChange }: T
 
       {filteredTransactions.length === 0 ? (
         <div className="text-center py-8">
-          <div className="text-gray-400 text-6xl mb-4">📝</div>
+          <div className="text-gray-400 text-6xl mb-4">?</div>
           <p className="text-gray-600 mb-2">
             {filter === 'all' ? 'Belum ada transaksi' : 
              filter === 'income' ? 'Belum ada pemasukan' : 'Belum ada pengeluaran'}
@@ -189,7 +189,7 @@ export default function TransactionList({ currentMonth, onTransactionChange }: T
                   <div>
                     <p className="font-medium text-gray-900">{transaction.description}</p>
                     <p className="text-sm text-gray-600">
-                      {categoryInfo.name} • {format(transaction.date, 'dd MMM yyyy')}
+                      {categoryInfo.name} - {format(transaction.date, 'dd MMM yyyy')}
                     </p>
                   </div>
                 </div>

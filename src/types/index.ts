@@ -26,6 +26,8 @@ export interface TransactionCategory {
   icon?: string;
 }
 
+export type NewTransactionInput = Omit<Transaction, 'id' | 'createdAt' | 'userId'>;
+
 export const DEFAULT_CATEGORIES: TransactionCategory[] = [
   // Income categories
   { id: 'salary', name: 'Gaji/Uang Saku', type: 'income', icon: 'fas fa-money-bill-wave' },

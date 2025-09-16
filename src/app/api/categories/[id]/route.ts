@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbClient } from '@/lib/postgres';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../auth/[...nextauth]/route';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const userId = Number(session.user.id);
   const client = await getDbClient();
   
   try {
@@ -18,12 +25,13 @@ export async function PUT(
       );
     }
     
-    const result = await client.query(`
-      UPDATE categories 
-      SET name = $1, type = $2, icon = $3, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4 
-      RETURNING *
-    `, [name, type, icon || '📝', categoryId]);
+    const result = await client.query(
+      `UPDATE categories 
+       SET name = $1, type = $2, icon = $3, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4 AND user_id = $5
+       RETURNING id, name, type, icon`,
+      [name, type, icon || 'fas fa-question-circle', categoryId, userId]
+    );
     
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -36,7 +44,7 @@ export async function PUT(
       id: result.rows[0].id,
       name: result.rows[0].name,
       type: result.rows[0].type as 'income' | 'expense',
-      icon: result.rows[0].icon
+      icon: result.rows[0].icon,
     };
     
     return NextResponse.json(updatedCategory);
@@ -55,18 +63,22 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const userId = Number(session.user.id);
   const client = await getDbClient();
   
   try {
     const categoryId = params.id;
     
-    // Check if category is being used in transactions
     const usageCheck = await client.query(
-      'SELECT COUNT(*) as count FROM transactions WHERE category = $1',
-      [categoryId]
+      'SELECT COUNT(*) as count FROM transactions WHERE category = $1 AND user_id = $2',
+      [categoryId, userId]
     );
     
-    if (parseInt(usageCheck.rows[0].count) > 0) {
+    if (parseInt(usageCheck.rows[0].count, 10) > 0) {
       return NextResponse.json(
         { error: 'Cannot delete category that is being used in transactions' },
         { status: 409 }
@@ -74,8 +86,8 @@ export async function DELETE(
     }
     
     const result = await client.query(
-      'DELETE FROM categories WHERE id = $1 RETURNING *',
-      [categoryId]
+      'DELETE FROM categories WHERE id = $1 AND user_id = $2 RETURNING id',
+      [categoryId, userId]
     );
     
     if (result.rows.length === 0) {

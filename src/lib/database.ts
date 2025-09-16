@@ -1,16 +1,24 @@
+import { getDbClient } from '@/lib/postgres';
+import { MonthlyBalance, Transaction, NewTransactionInput } from '@/types';
+
 // Transaction services
-export async function addTransaction(transaction: any, userId: number): Promise<number> {
+export async function addTransaction(
+  transaction: NewTransactionInput,
+  userId: number
+): Promise<number> {
   const client = await getDbClient();
   try {
     const result = await client.query(
-      `INSERT INTO transactions (user_id, category_id, amount, type, description, date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      `INSERT INTO transactions (user_id, category, amount, type, description, date)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
       [
         userId,
-        transaction.categoryId,
+        transaction.category,
         transaction.amount,
         transaction.type,
         transaction.description,
-        transaction.date
+        transaction.date,
       ]
     );
     return result.rows[0].id;
@@ -19,24 +27,105 @@ export async function addTransaction(transaction: any, userId: number): Promise<
   }
 }
 
-export async function getTransactions(userId: number, month?: string): Promise<any[]> {
+export async function getTransactions(userId: number, month?: string): Promise<Transaction[]> {
   const client = await getDbClient();
   try {
-    let query = `SELECT * FROM transactions WHERE user_id = $1`;
-    let params: any[] = [userId];
+    let query = `
+      SELECT id, user_id, category, amount, type, description, date, created_at
+      FROM transactions
+      WHERE user_id = $1`;
+    const params: any[] = [userId];
     if (month) {
       query += ` AND TO_CHAR(date, 'YYYY-MM') = $2`;
       params.push(month);
     }
+    query += ' ORDER BY date DESC, id DESC';
     const result = await client.query(query, params);
-    return result.rows;
+    return result.rows.map((row) => ({
+      id: String(row.id),
+      userId: row.user_id,
+      category: row.category,
+      amount: Number(row.amount),
+      type: row.type,
+      description: row.description,
+      date: new Date(row.date),
+      createdAt: new Date(row.created_at),
+    }));
   } finally {
     client.release();
   }
 }
 
-import { getDbClient } from '@/lib/postgres';
-import { MonthlyBalance } from '@/types';
+export async function updateTransaction(
+  id: string,
+  userId: number,
+  updates: Partial<Transaction>
+): Promise<void> {
+  const client = await getDbClient();
+  try {
+    const fields: string[] = [];
+    const values: any[] = [];
+    let index = 1;
+
+    const addField = (column: string, value: any) => {
+      fields.push(`${column} = $${index}`);
+      values.push(value);
+      index++;
+    };
+
+    if (updates.category !== undefined) {
+      addField('category', updates.category);
+    }
+    if (updates.amount !== undefined) {
+      addField('amount', updates.amount);
+    }
+    if (updates.type !== undefined) {
+      addField('type', updates.type);
+    }
+    if (updates.description !== undefined) {
+      addField('description', updates.description);
+    }
+    if (updates.date !== undefined) {
+      const dateValue = updates.date instanceof Date ? updates.date : new Date(updates.date);
+      addField('date', dateValue);
+    }
+
+    if (fields.length === 0) {
+      return;
+    }
+
+    const idPlaceholder = index;
+    values.push(id);
+    index++;
+    const userPlaceholder = index;
+    values.push(userId);
+
+    const query = `UPDATE transactions SET ${fields.join(', ')} WHERE id = $${idPlaceholder} AND user_id = $${userPlaceholder}`;
+    const result = await client.query(query, values);
+
+    if (result.rowCount === 0) {
+      throw new Error('Transaction not found');
+    }
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteTransaction(id: string, userId: number): Promise<void> {
+  const client = await getDbClient();
+  try {
+    const result = await client.query(
+      'DELETE FROM transactions WHERE id = $1 AND user_id = $2',
+      [id, userId]
+    );
+
+    if (result.rowCount === 0) {
+      throw new Error('Transaction not found');
+    }
+  } finally {
+    client.release();
+  }
+}
 
 // Monthly balance services
 export async function getMonthlyBalance(userId: number, month: string): Promise<MonthlyBalance | null> {
@@ -51,13 +140,13 @@ export async function getMonthlyBalance(userId: number, month: string): Promise<
     }
     const row = result.rows[0];
     return {
-      id: row.id,
+      id: row.id != null ? String(row.id) : undefined,
       month: row.month,
-      initialBalance: parseFloat(row.initial_balance),
-      currentBalance: parseFloat(row.current_balance),
-      totalIncome: parseFloat(row.total_income),
-      totalExpense: parseFloat(row.total_expense),
-      lastUpdated: new Date(row.last_updated)
+      initialBalance: Number(row.initial_balance),
+      currentBalance: Number(row.current_balance),
+      totalIncome: Number(row.total_income),
+      totalExpense: Number(row.total_expense),
+      lastUpdated: new Date(row.last_updated),
     };
   } finally {
     client.release();
@@ -72,8 +161,14 @@ export async function setMonthlyBalance(
   const client = await getDbClient();
   try {
     await client.query(
-      `INSERT INTO monthly_balances (user_id, month, initial_balance, current_balance, total_income, total_expense) VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT (user_id, month) DO UPDATE SET initial_balance = EXCLUDED.initial_balance, current_balance = EXCLUDED.current_balance, total_income = EXCLUDED.total_income, total_expense = EXCLUDED.total_expense, last_updated = CURRENT_TIMESTAMP`,
+      `INSERT INTO monthly_balances (user_id, month, initial_balance, current_balance, total_income, total_expense)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (user_id, month) DO UPDATE SET
+         initial_balance = EXCLUDED.initial_balance,
+         current_balance = EXCLUDED.current_balance,
+         total_income = EXCLUDED.total_income,
+         total_expense = EXCLUDED.total_expense,
+         last_updated = CURRENT_TIMESTAMP`,
       [userId, month, balance.initialBalance, balance.currentBalance, balance.totalIncome, balance.totalExpense]
     );
   } finally {
@@ -116,7 +211,7 @@ export async function updateMonthlyBalance(
     const setClause = fields.join(', ');
     values.push(userId);
     values.push(month);
-    const query = `UPDATE monthly_balances SET ${setClause} WHERE user_id = $${paramIndex} AND month = $${paramIndex+1}`;
+    const query = `UPDATE monthly_balances SET ${setClause} WHERE user_id = $${paramIndex} AND month = $${paramIndex + 1}`;
     await client.query(query, values);
   } finally {
     client.release();

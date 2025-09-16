@@ -1,3 +1,5 @@
+﻿"use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -11,16 +13,29 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-    if (res.ok) {
-      router.push("/login");
-    } else {
-      const data = await res.json();
-      setError(data.message || "Registrasi gagal");
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name }),
+      });
+
+      if (res.ok) {
+        router.push("/login");
+        return;
+      }
+
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        setError(data.message || "Registrasi gagal");
+      } else {
+        const text = await res.text();
+        setError(text || "Registrasi gagal");
+      }
+    } catch (err: any) {
+      console.error("Failed to register:", err);
+      setError("Registrasi gagal. Coba lagi nanti.");
     }
   };
 

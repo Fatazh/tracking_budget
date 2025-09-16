@@ -1,15 +1,20 @@
-import { Transaction, MonthlyBalance, TransactionCategory } from '@/types';
+import { Transaction, MonthlyBalance, TransactionCategory, NewTransactionInput } from '@/types';
 
 // Client-side API service layer for database operations
 
 // Transaction services
-export const addTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<string> => {
+export const addTransaction = async (transaction: NewTransactionInput): Promise<string> => {
+  const payload = {
+    ...transaction,
+    date: transaction.date instanceof Date ? transaction.date.toISOString() : transaction.date,
+  };
+
   const response = await fetch('/api/transactions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(transaction),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -32,9 +37,14 @@ export const getTransactions = async (userId: number, month?: string): Promise<T
   }
   const transactions = await response.json();
   return transactions.map((t: any) => ({
-    ...t,
+    id: t.id != null ? String(t.id) : undefined,
+    amount: Number(t.amount),
+    type: t.type,
+    description: t.description,
+    category: t.category,
     date: new Date(t.date),
-    createdAt: new Date(t.createdAt)
+    createdAt: new Date(t.created_at ?? t.createdAt ?? t.date),
+    userId: Number(t.user_id ?? t.userId ?? userId),
   }));
 };
 
@@ -71,8 +81,13 @@ export const getMonthlyBalance = async (userId: number, month: string): Promise<
   const balance = await response.json();
   if (!balance) return null;
   return {
-    ...balance,
-    lastUpdated: new Date(balance.lastUpdated)
+    id: balance.id ? String(balance.id) : undefined,
+    month: balance.month,
+    initialBalance: Number(balance.initialBalance ?? balance.initial_balance ?? 0),
+    currentBalance: Number(balance.currentBalance ?? balance.current_balance ?? 0),
+    totalIncome: Number(balance.totalIncome ?? balance.total_income ?? 0),
+    totalExpense: Number(balance.totalExpense ?? balance.total_expense ?? 0),
+    lastUpdated: new Date(balance.lastUpdated ?? balance.last_updated ?? Date.now()),
   };
 };
 

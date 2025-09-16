@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Transaction, TransactionCategory } from '@/types';
+import { NewTransactionInput, TransactionCategory } from '@/types';
 import { addTransaction, getCategories } from '@/lib/api';
 
 interface TransactionFormProps {
@@ -78,7 +78,7 @@ export default function TransactionForm({ currentMonth, onTransactionAdded }: Tr
 
     setIsSubmitting(true);
     try {
-      const transaction: Omit<Transaction, 'id' | 'createdAt'> = {
+      const transaction: NewTransactionInput = {
         amount: parseFloat(formData.amount),
         type: formData.type,
         description: formData.description,
@@ -183,7 +183,7 @@ export default function TransactionForm({ currentMonth, onTransactionAdded }: Tr
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    💰 Pemasukan
+                    Pemasukan
                   </button>
                   <button
                     type="button"
@@ -194,7 +194,7 @@ export default function TransactionForm({ currentMonth, onTransactionAdded }: Tr
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    💸 Pengeluaran
+                    Pengeluaran
                   </button>
                 </div>
               </div>

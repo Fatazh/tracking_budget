@@ -1,14 +1,14 @@
 import { MonthlyBalance, Transaction } from '@/types';
 import { getTransactions, updateMonthlyBalance, getMonthlyBalance } from '@/lib/api';
 
-export const recalculateMonthlyBalance = async (month: string) => {
+export const recalculateMonthlyBalance = async (userId: number, month: string) => {
   try {
     // Get current balance data
-    const currentBalance = await getMonthlyBalance(month);
+    const currentBalance = await getMonthlyBalance(userId, month);
     if (!currentBalance) return;
 
     // Get all transactions for the month
-    const transactions = await getTransactions(month);
+    const transactions = await getTransactions(userId, month);
     
     // Calculate totals
     const totalIncome = transactions

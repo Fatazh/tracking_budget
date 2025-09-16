@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { TransactionCategory } from '@/types';
 
@@ -43,15 +43,16 @@ export default function CategoryManager({ onClose }: CategoryManagerProps) {
   });
 
   const { data: session } = useSession();
-  useEffect(() => {
-    fetchCategories();
-  }, [session]);
+  const userId = (session?.user as { id?: number } | undefined)?.id;
 
-  const fetchCategories = async () => {
-    const user = session?.user as { id: number } | undefined;
-    if (!user?.id) return;
+  const fetchCategories = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
-      const response = await fetch(`/api/categories?userId=${user.id}`);
+      const response = await fetch(`/api/categories?userId=${userId}`);
       if (response.ok) {
         const data = await response.json();
         setCategories(data);
@@ -61,7 +62,11 @@ export default function CategoryManager({ onClose }: CategoryManagerProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
