@@ -1,6 +1,28 @@
 import { getDbClient } from '@/lib/postgres';
 import { MonthlyBalance, Transaction, NewTransactionInput } from '@/types';
 
+const MONTH_FORMAT = /^\d{4}-\d{2}$/;
+
+const parseMonthString = (month: string): Date => {
+  if (!MONTH_FORMAT.test(month)) {
+    throw new Error('Invalid month format. Expected YYYY-MM.');
+  }
+  const [yearStr, monthStr] = month.split('-');
+  const year = Number(yearStr);
+  const monthIndex = Number(monthStr) - 1;
+  return new Date(Date.UTC(year, monthIndex, 1));
+};
+
+const formatMonthValue = (value: Date | string): string => {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('Invalid month value retrieved from database.');
+  }
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+};
+
 // Transaction services
 export async function addTransaction(
   transaction: NewTransactionInput,
@@ -131,9 +153,10 @@ export async function deleteTransaction(id: string, userId: number): Promise<voi
 export async function getMonthlyBalance(userId: number, month: string): Promise<MonthlyBalance | null> {
   const client = await getDbClient();
   try {
+    const monthDate = parseMonthString(month);
     const result = await client.query(
       'SELECT * FROM monthly_balances WHERE user_id = $1 AND month = $2',
-      [userId, month]
+      [userId, monthDate]
     );
     if (result.rows.length === 0) {
       return null;
@@ -141,12 +164,12 @@ export async function getMonthlyBalance(userId: number, month: string): Promise<
     const row = result.rows[0];
     return {
       id: row.id != null ? String(row.id) : undefined,
-      month: row.month,
+      month: formatMonthValue(row.month),
       initialBalance: Number(row.initial_balance),
       currentBalance: Number(row.current_balance),
       totalIncome: Number(row.total_income),
       totalExpense: Number(row.total_expense),
-      lastUpdated: new Date(row.last_updated),
+      lastUpdated: new Date(row.last_updated ?? row.updated_at ?? row.month),
     };
   } finally {
     client.release();
@@ -160,6 +183,7 @@ export async function setMonthlyBalance(
 ): Promise<void> {
   const client = await getDbClient();
   try {
+    const monthDate = parseMonthString(month);
     await client.query(
       `INSERT INTO monthly_balances (user_id, month, initial_balance, current_balance, total_income, total_expense)
        VALUES ($1, $2, $3, $4, $5, $6)
@@ -169,7 +193,7 @@ export async function setMonthlyBalance(
          total_income = EXCLUDED.total_income,
          total_expense = EXCLUDED.total_expense,
          last_updated = CURRENT_TIMESTAMP`,
-      [userId, month, balance.initialBalance, balance.currentBalance, balance.totalIncome, balance.totalExpense]
+      [userId, monthDate, balance.initialBalance, balance.currentBalance, balance.totalIncome, balance.totalExpense]
     );
   } finally {
     client.release();
@@ -210,7 +234,8 @@ export async function updateMonthlyBalance(
     fields.push(`last_updated = CURRENT_TIMESTAMP`);
     const setClause = fields.join(', ');
     values.push(userId);
-    values.push(month);
+    const monthDate = parseMonthString(month);
+    values.push(monthDate);
     const query = `UPDATE monthly_balances SET ${setClause} WHERE user_id = $${paramIndex} AND month = $${paramIndex + 1}`;
     await client.query(query, values);
   } finally {

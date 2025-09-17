@@ -3,6 +3,18 @@ import { getMonthlyBalance, setMonthlyBalance, updateMonthlyBalance } from '@/li
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/authOptions';
 
+const MONTH_REGEX = /^\d{4}-\d{2}$/;
+
+const validateMonthParam = (month: string): NextResponse | null => {
+  if (!MONTH_REGEX.test(month)) {
+    return NextResponse.json(
+      { error: 'Invalid month format. Use YYYY-MM.' },
+      { status: 400 }
+    );
+  }
+  return null;
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { month: string } }
@@ -13,6 +25,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = session.user.id;
+    const invalidMonthResponse = validateMonthParam(params.month);
+    if (invalidMonthResponse) {
+      return invalidMonthResponse;
+    }
     const balance = await getMonthlyBalance(userId, params.month);
     return NextResponse.json(balance);
   } catch (error: any) {
@@ -46,6 +62,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = session.user.id;
+    const invalidMonthResponse = validateMonthParam(params.month);
+    if (invalidMonthResponse) {
+      return invalidMonthResponse;
+    }
     const balance = await request.json();
     await setMonthlyBalance(userId, params.month, balance);
     return NextResponse.json({ success: true });
@@ -68,6 +88,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = session.user.id;
+    const invalidMonthResponse = validateMonthParam(params.month);
+    if (invalidMonthResponse) {
+      return invalidMonthResponse;
+    }
     const updates = await request.json();
     await updateMonthlyBalance(userId, params.month, updates);
     return NextResponse.json({ success: true });
